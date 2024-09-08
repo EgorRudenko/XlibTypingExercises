@@ -5,9 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <X11/XKBlib.h>
-#include <cairo/cairo-xlib.h>
-#include <cairo/cairo.h>
-//#include <cairo/cairo>
+
 
 #define WIDTH 500
 #define HEIGHT 500
@@ -28,7 +26,7 @@ int symsToProcess;
 int offset = 0;
 char *toProcess;
 int mistakes = 0;
-char *symbol;
+
 
 void transformSymbol(char* ch);
 void redefineToType(char* toType);
@@ -39,7 +37,6 @@ int main()
 
 	toProcess = malloc(sizeof(char)*stringLength);
 	symsToProcess = stringLength;
-	symbol = (char*)malloc(10*sizeof(char));
 	src = fopen("text.txt", "r");
 	toType = (char*)malloc(stringLength*sizeof(char));
 	memcpy(toType, "Hello, world ", strlen("Hello, world "));
@@ -60,21 +57,20 @@ int main()
 	XSetWMNormalHints(MainDisplay, MainWindow, hints);
 	XFree(hints);
 	XMapWindow(MainDisplay, MainWindow);
-	//unsigned long val = GCBackground | GCForeground;
-	//vals.background = 0xffffff;
-	//vals.foreground = 0x000000;
-	//gc = XCreateGC(MainDisplay, MainWindow, 0, &vals);
+	unsigned long val = GCBackground | GCForeground;
+	vals.background = 0xffffff;
+	vals.foreground = 0x000000;
+	gc = XCreateGC(MainDisplay, MainWindow, 0, &vals);
 
-	int screen = DefaultScreen(MainDisplay);
-	cairo_surface_t *sfc = cairo_xlib_surface_create(MainDisplay, MainWindow, DefaultVisual(MainDisplay, screen), 300, 300);
-    cairo_xlib_surface_set_size(sfc, WIDTH, HEIGHT);
-	cairo_t *cr = cairo_create(sfc);
 
-	cairo_set_source_rgb (cr, 0.0, 0.0, 0.0);
-	cairo_select_font_face (cr, "Consolas", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-	cairo_set_font_size (cr, 12);
+	//XFontStruct* font;
+	//char* name = "-*-dejavu sans-bold-r-*-*-*-220-100-100-*-*-iso8859-1";
+	//font = XLoadQueryFont(MainDisplay, name);
+	//XSetFont(MainDisplay, gc, font->fid);
 
 	while (1){
+		char *symbol;
+		symbol = (char*)malloc(10*sizeof(char));
 		toCont = XCheckTypedEvent(MainDisplay, KeyPress,&event);
 		if (toCont) {
 			if (event.xkey.keycode){
@@ -94,40 +90,29 @@ int main()
 				}
 			};
 redraw:
-			//XClearWindow(MainDisplay, MainWindow);
-			cairo_set_source_rgb (cr, 255, 255, 255);
-			cairo_rectangle (cr, 0, 0, WIDTH, HEIGHT);
-			cairo_fill (cr);	
-			cairo_surface_flush(sfc);
-
+			XClearWindow(MainDisplay, MainWindow);
 			for (int i = 0; i < stringLength; i++){
 				char *currChar;
 				if (*(te+i) == *(toType+i) & *(te+i) != 0) {
-					cairo_set_source_rgb (cr, 0.0, 1.0, 0.0);
+					XSetForeground(MainDisplay, gc, 0x3bb032);
 					currChar = te+i;
 				}
 				else if (*(te+i) != *(toType+i) & *(te+i) == 0) {
-					cairo_set_source_rgb (cr, 0.5, 0.5, 0.5);
+					XSetForeground(MainDisplay, gc, 0xa9a9a9);
 					currChar = toType+i;
 				}
 				else if (*(te+i) != *(toType+i) & *(te+i) != 0) {
-					cairo_set_source_rgb (cr, 1.0, 0.0, 0.0);
+					XSetForeground(MainDisplay, gc, 0xff5555); 
 					if (*(te+i) != *" ") currChar = te+i;
-					else currChar = "*";
+					else currChar = "\0";
 				}
 				else {currChar = " ";};
-				char toPrint[2] = " \0";
-				toPrint[0] = *currChar;
-				cairo_text_extents_t tE;
-				cairo_text_extents(cr, toPrint, &tE);
-				cairo_move_to (cr, i*10, 10);
-				cairo_show_text (cr, toPrint);
-				cairo_surface_flush(sfc);
+				draw(currChar, 10 + 7*i, 10);
+				XFlush(MainDisplay);
 			};
 			
 			toCont = False;
 		};
-
 		if (toType[currPos] == '\0' & mistakes == 0) {
 			redefineToType(toType);
 			goto redraw;

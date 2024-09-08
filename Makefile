@@ -5,7 +5,7 @@ OUTPUT = main
 all: clean main
 
 main:
-	$(C_COMP) -o $(OUTPUT) $(MAIN) -lX11 -lstdc++
+	$(C_COMP) -o $(OUTPUT) $(MAIN) -lX11 -lcairo -lstdc++
 
 clean:
 	rm $(OUTPUT)
